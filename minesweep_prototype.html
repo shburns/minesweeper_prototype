@@ -57,12 +57,12 @@
                 } else {
                     clearTiles(index, row, col);
                 }
+                checkForWin();
             }
 
             function renderBoard() {
                 ctx.fillStyle = "black";
                 ctx.fillRect(0, 0, cvs.width, cvs.height);
-                t = 0;
                 for(var i = 0; i < Math.floor(cvs.height/tSize); i++) {
                     for(var j = 0; j < Math.floor(cvs.width/tSize); j++) {
                         ctx.fillStyle = "white";
@@ -142,7 +142,12 @@
                 ctx.fillRect(col*tSize, row*tSize, tSize - 2, tSize - 2);
             }
 
-            function renderBombCell(row, col) {
+            function renderBombCellWin(row, col) {
+                ctx.fillStyle = "green";
+                ctx.fillRect(col*tSize, row*tSize, tSize - 2, tSize - 2);
+            }
+
+            function renderBombCellLose(row, col) {
                 ctx.fillStyle = "red";
                 ctx.fillRect(col*tSize, row*tSize, tSize - 2, tSize - 2);
             }
@@ -187,12 +192,40 @@
                     }
                 }
             }
+
+            function checkForWin() {
+                for(var i = 0; i < tiles.length; i++) {
+                    if (tiles[i] != CLEARED) {
+                        var isMine = false;
+                        for(var j = 0; j < mines.length; j++) {
+                            if (mines[j] == i) {
+                                isMine = true;
+                                break;
+                            }
+                        }
+                        if (!isMine) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            function gameWon() {
+                for(var i = 0; i < mines.length; i++) {
+                    let r = Math.floor(mines[i]/(cvs.width/tSize));
+                    let c = mines[i] - (r * (cvs.width/tSize));
+                    renderBombCellWin(r, c);
+                }
+                cvs.removeEventListener("mouseup", updateBoard);
+                cvs.addEventListener("mouseup", resetBoard);
+            }
             
             function gameLost() {
                 for(var i = 0; i < mines.length; i++) {
                     let r = Math.floor(mines[i]/(cvs.width/tSize));
                     let c = mines[i] - (r * (cvs.width/tSize));
-                    renderBombCell(r, c);
+                    renderBombCellLose(r, c);
                 }
                 cvs.removeEventListener("mouseup", updateBoard);
                 cvs.addEventListener("mouseup", resetBoard);
