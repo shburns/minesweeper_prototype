@@ -1,0 +1,220 @@
+<html>
+    <head>
+        <script>
+            tSize = 20;
+            tCount = 576;
+            tiles = [];
+            mines = [];
+            const UNCLICKED = "unclicked";
+            const FLAGGED = "flagged";
+            const CLEARED = "cleared";
+
+            window.onload = function() {
+                cvs = document.getElementById("gc");
+                ctx = cvs.getContext("2d");
+                initValues();
+                renderBoard();
+                cvs.addEventListener("contextmenu", blockCtxMenu);
+            }
+
+            function initValues() {
+                while(mines.length > 0) {
+                    mines.shift();
+                }
+                while (tiles.length > 0) {
+                    tiles.shift();
+                }
+                for(var i = 0; i < 99; i++) {
+                    mineSpot = Math.floor(Math.random() * 600);
+                    for(var j = 0; j < mines.length; j++) {
+                        if(mines[j] == mineSpot) {
+                            mineSpot = Math.floor(Math.random() * 600);
+                            j = 0;
+                        }
+                    }
+                    mines.push(mineSpot);
+                }
+                for(var i = 0; i < tCount; i++) {
+                    tiles.push(UNCLICKED);
+                }
+            }
+
+            function updateBoard(evt) {
+                let col = Math.floor(evt.layerX/tSize);
+                let row = Math.floor(evt.layerY/tSize);
+                let index = (row * (cvs.width/tSize)) + col;
+                btn = evt.button;
+                if (!resolveClickedTileChecks(btn, row, col, index)) {
+                    return;
+                }
+                if(!tileClear(index)) {
+                    gameLost();
+                    return;
+                }
+                let adjacentMines = checkAdjacentMines(index, row, col);
+                if (adjacentMines) {
+                    renderAdjacentCell(adjacentMines, row, col);
+                } else {
+                    clearTiles(index, row, col);
+                }
+            }
+
+            function renderBoard() {
+                ctx.fillStyle = "black";
+                ctx.fillRect(0, 0, cvs.width, cvs.height);
+                t = 0;
+                for(var i = 0; i < Math.floor(cvs.height/tSize); i++) {
+                    for(var j = 0; j < Math.floor(cvs.width/tSize); j++) {
+                        ctx.fillStyle = "white";
+                        ctx.fillRect(j*tSize, i*tSize, tSize - 2, tSize - 2);
+                    }
+                }
+                cvs.addEventListener("mouseup", updateBoard);
+            }
+
+            function resolveClickedTileChecks(btn, row, col, index) {
+                if (btn == 2) {
+                    if (tiles[index] != CLEARED) {
+                        if (tiles[index] == UNCLICKED) {
+                            tiles[index] = FLAGGED;
+                            ctx.fillStyle = "blue";
+                        } else {
+                            tiles[index] = UNCLICKED;
+                            ctx.fillStyle = "white";
+                        }
+                        ctx.fillRect(col*tSize, row*tSize, tSize - 2, tSize - 2);
+                    }
+                    return false;
+                } else if(tiles[index] == FLAGGED || tiles[index] == CLEARED) {
+                    return false;
+                }
+                return true;
+            }
+
+            function tileClear(x) {
+                for(var i = 0; i < mines.length; i++) {
+                    if(mines[i] == x) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            function checkAdjacentMines(index, row, col) {
+                let i = 0;
+                let rowSize = (cvs.width/tSize);
+                let colSize = (cvs.height/tSize);
+                if(row != 0 && !tileClear(index - rowSize)) {
+                    i++;
+                }
+                if (row != 0 && col != 0 && !tileClear(index - rowSize - 1)) {
+                    i++;
+                }
+                if(row != 0 && col != (rowSize - 1) && !tileClear(index - rowSize + 1)) {
+                    i++;
+                }
+                if(col != 0 && !tileClear(index - 1)) {
+                    i++;
+                }
+                if(col != (rowSize - 1) && !tileClear(index + 1)){
+                    i++;
+                }
+                if(row != (colSize - 1) && col != 0 && !tileClear(index + rowSize - 1)) {
+                    i++;
+                }
+                if(row != (colSize - 1) && !tileClear(index + rowSize)) {
+                    i++;
+                }
+                if(row != (colSize - 1) && col != (rowSize - 1) && !tileClear(index + rowSize + 1)) {
+                    i++;
+                }
+                return i;
+            }
+
+            function renderAdjacentCell (adjacentMines, row, col) {
+                ctx.fillStyle = "blue";
+                ctx.font = '18px sans bold';
+                ctx.fillText(adjacentMines, (col * tSize) + 4, (row * tSize) + 16);
+            }
+
+            function renderEmptyCell(row, col) {
+                ctx.fillStyle = "lightgrey";
+                ctx.fillRect(col*tSize, row*tSize, tSize - 2, tSize - 2);
+            }
+
+            function renderBombCell(row, col) {
+                ctx.fillStyle = "red";
+                ctx.fillRect(col*tSize, row*tSize, tSize - 2, tSize - 2);
+            }
+
+            function clearTiles(index, row, col) {
+                let rowSize = (cvs.width/tSize);
+                let colSize = (cvs.height/tSize);
+                let c = col;
+                let r = row;
+                let adjacentMines = checkAdjacentMines(index, row, col);
+                if (tiles[index] != CLEARED) {
+                    tiles[index] = CLEARED;
+                    if (!adjacentMines) {
+                        renderEmptyCell(row, col);
+                        if (col != 0) {
+                            clearTiles((index - 1), row, (col - 1));
+                        }
+                        if (col != (rowSize - 1)) {
+                            clearTiles ((index + 1), row, (col + 1));
+                        }
+                        if (row != 0) {
+                            clearTiles((index - rowSize), (row - 1), col);
+                        }
+                        if (row != 0 && col != 0) {
+                            clearTiles((index - rowSize - 1), (row - 1), (col - 1));
+                        }
+                        if (row != 0 && col != (rowSize - 1)) {
+                            clearTiles((index - rowSize + 1), (row - 1), (col + 1));
+                        }
+                        if (row != (colSize - 1)) {
+                            clearTiles((index + rowSize), (row + 1), col);
+                        }
+                        if (row != (colSize - 1) && col != 0) {
+                            clearTiles((index + rowSize - 1), (row + 1), (col - 1));
+                        }
+                        if (row != (colSize - 1) && col != (rowSize - 1)) {
+                            clearTiles((index + rowSize + 1), (row + 1), (col + 1));
+                        }
+                    } else {
+                        renderAdjacentCell(adjacentMines, row, col);
+                        return true;
+                    }
+                }
+            }
+            
+            function gameLost() {
+                for(var i = 0; i < mines.length; i++) {
+                    let r = Math.floor(mines[i]/(cvs.width/tSize));
+                    let c = mines[i] - (r * (cvs.width/tSize));
+                    renderBombCell(r, c);
+                }
+                cvs.removeEventListener("mouseup", updateBoard);
+                cvs.addEventListener("mouseup", resetBoard);
+            }
+
+            function resetBoard() {
+                    initValues();
+                    renderBoard();
+                    cvs.removeEventListener("mouseup", resetBoard);
+            }
+
+            function blockCtxMenu (evt) {
+                if(evt.preventDefault != undefined) {
+                    evt.preventDefault();
+                }
+                if(evt.stopPropagation != undefined) {
+                    evt.stopPropagation();
+                }
+                return false;
+            }
+            
+        </script>
+    </head>
+    <canvas id="gc" width="480" height="480"/>
+</html>
