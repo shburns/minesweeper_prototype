@@ -51,13 +51,10 @@
                     gameLost();
                     return;
                 }
-                let adjacentMines = checkAdjacentMines(index, row, col);
-                if (adjacentMines) {
-                    renderAdjacentCell(adjacentMines, row, col);
-                } else {
-                    clearTiles(index, row, col);
+                clearTiles(index, row, col);
+                if (checkForWin()) {
+                    gameWon();
                 }
-                checkForWin();
             }
 
             function renderBoard() {
@@ -194,21 +191,16 @@
             }
 
             function checkForWin() {
+                let clr = 0;
                 for(var i = 0; i < tiles.length; i++) {
-                    if (tiles[i] != CLEARED) {
-                        var isMine = false;
-                        for(var j = 0; j < mines.length; j++) {
-                            if (mines[j] == i) {
-                                isMine = true;
-                                break;
-                            }
-                        }
-                        if (!isMine) {
-                            return false;
-                        }
+                    if (tiles[i] == CLEARED) {
+                        clr++;
                     }
                 }
-                return true;
+                if (clr == (tCount - mines.length)) {
+                    return true;
+                }
+                return false;
             }
 
             function gameWon() {
