@@ -191,16 +191,21 @@
             }
 
             function checkForWin() {
-                let clr = 0;
                 for(var i = 0; i < tiles.length; i++) {
-                    if (tiles[i] == CLEARED) {
-                        clr++;
+                    if (tiles[i] == UNCLICKED || tiles[i] == FLAGGED) {
+                        let isMined = false;
+                        for(var j = 0; j < mines.length; j++) {
+                            if (mines[j] == i) {
+                                isMined = true;
+                                break;
+                            }
+                        }
+                        if (!isMined) {
+                            return false;
+                        }
                     }
                 }
-                if (clr == (tCount - mines.length)) {
-                    return true;
-                }
-                return false;
+                return true;
             }
 
             function gameWon() {
