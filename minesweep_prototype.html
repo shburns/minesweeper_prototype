@@ -25,10 +25,10 @@
                     tiles.shift();
                 }
                 for(var i = 0; i < 99; i++) {
-                    mineSpot = Math.floor(Math.random() * 600);
+                    mineSpot = Math.floor(Math.random() * tCount);
                     for(var j = 0; j < mines.length; j++) {
                         if(mines[j] == mineSpot) {
-                            mineSpot = Math.floor(Math.random() * 576);
+                            mineSpot = Math.floor(Math.random() * tCount);
                             j = 0;
                         }
                     }
